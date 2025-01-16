@@ -1,13 +1,10 @@
 import streamlit as st
 import json
 import requests
-import os
-from dotenv import load_dotenv
 import pdfplumber
 import io
  
 # Tải biến môi trường từ .env
-load_dotenv()
  
 # Thông tin API endpoint
 endpoint = st.secrets["AZURE_OPENAI_ENDPOINT"]
