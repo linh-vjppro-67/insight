@@ -66,7 +66,11 @@ def process_file(file_path, schema_path, prompt_text):
     # Prepare data to send to API
     system_message = {
         "role": "system",
-        "content": "You are an AI assistant that helps extract information from resumes (CVs)."
+        "content": """You are an AI assistant that helps extract information from resumes (CVs). 
+        Return a JSON object with the following keys:
+        - `basic_info`: Basic candidate information.
+        - `insights`: Analysis results based on the points listed above.
+        - `recommendations`: Suggested career moves, skill improvements, or other insights."""
     }
 
     user_message = {
