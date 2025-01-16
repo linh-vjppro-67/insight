@@ -3,43 +3,49 @@ import json
 import requests
 import pdfplumber
 import io
- 
-# Tải biến môi trường từ .env
- 
-# Thông tin API endpoint
+
+# Azure OpenAI API endpoint and key from secrets
 endpoint = st.secrets["AZURE_OPENAI_ENDPOINT"]
 api_key = st.secrets["AZURE_OPENAI_API_KEY"]
- 
-# Function to read PDF using pdfplumber
+
+# Function to extract text from PDF using pdfplumber
 def extract_text_from_pdf_plumber(pdf_data):
     text = ""
     with pdfplumber.open(io.BytesIO(pdf_data)) as pdf:
         for page in pdf.pages:
             text += page.extract_text()
     return text
- 
+
 # Function to process the response from the OpenAI API
 def process_response(response_data):
     if not response_data:
         st.warning("No response data. Skipping parsing.")
         return None
- 
-    generated_text = response_data['choices'][0]['message']['content']
+
     try:
+        generated_text = response_data['choices'][0]['message']['content']
         extracted_info = json.loads(generated_text)
         return extracted_info
+    except (KeyError, IndexError):
+        st.error("Unexpected API response format.")
+        return None
     except json.JSONDecodeError as e:
         st.error(f"Error parsing generated text into JSON: {e}")
         return None
- 
+
 # Function to process the uploaded file and call the API
 def process_file(file_path, schema_path):
-    # Read the schema from JSON file
-    with open(schema_path, 'r') as file:
-        schema_json = json.load(file)
-   
+    # Read schema from JSON file
+    try:
+        with open(schema_path, 'r') as file:
+            schema_json = json.load(file)
+    except FileNotFoundError:
+        return {'statusCode': 500, 'message': "Schema file not found."}
+    except json.JSONDecodeError as e:
+        return {'statusCode': 500, 'message': f"Error reading schema JSON: {e}"}
+
     extracted_text = ""
- 
+
     # Handle PDF file
     if file_path.endswith('.pdf'):
         with open(file_path, 'rb') as pdf_file:
@@ -50,13 +56,13 @@ def process_file(file_path, schema_path):
             'statusCode': 400,
             'message': 'Unsupported file type. Only .pdf is supported.'
         }
- 
+
     if not extracted_text.strip():
         return {
             'statusCode': 400,
             'message': 'No text extracted from the file.'
         }
- 
+
     # Prepare data to send to API
     system_message_content = """
         You are an AI assistant that helps extract information from resumes (CVs).
@@ -66,7 +72,7 @@ def process_file(file_path, schema_path):
         "role": "system",
         "content": system_message_content
     }
- 
+
     user_message = {
         "role": "user",
         "content": f"""
@@ -114,67 +120,79 @@ def process_file(file_path, schema_path):
             - `recommendations`: Suggested career moves, skill improvements, or other insights.
         """
     }
- 
+
     data = {
         "messages": [system_message, user_message],
         "max_tokens": 16000,
         "temperature": 1,
         "top_p": 0.25
     }
- 
+
     # API request to Azure OpenAI
-    response = requests.post(endpoint, headers={'Content-Type': 'application/json', 'api-key': api_key}, data=json.dumps(data))
- 
+    try:
+        response = requests.post(
+            endpoint,
+            headers={'Content-Type': 'application/json', 'api-key': api_key},
+            data=json.dumps(data)
+        )
+    except requests.RequestException as e:
+        return {
+            'statusCode': 500,
+            'message': f"Error calling OpenAI API: {e}"
+        }
+
     if response.status_code == 200:
         response_data = response.json()
         extracted_info = process_response(response_data)
- 
+
         if extracted_info is None:
             return {
                 'statusCode': 500,
                 'message': 'Error processing OpenAI response'
             }
- 
+
         return {
             'statusCode': 200,
             'data': extracted_info
         }
     else:
         return {
-            'statusCode': 500,
+            'statusCode': response.status_code,
             'message': 'Error calling OpenAI API',
             'error': response.text
         }
- 
+
 # Streamlit UI
 def app():
     st.title("Resume Insights and Career Recommendations")
- 
+
     st.sidebar.header("File Input")
     schema_path = './schema.json'  # Path to schema file
     uploaded_file = st.file_uploader("Choose a PDF resume", type=["pdf"])
- 
+
     if uploaded_file is not None:
         file_path = uploaded_file.name
         with open(file_path, 'wb') as f:
             f.write(uploaded_file.getvalue())
- 
-        # Call process file
+
+        # Call process_file
         result = process_file(file_path, schema_path)
-       
+
         if result['statusCode'] == 200:
             data = result['data']
+
             st.header("Basic Candidate Information")
-            st.json(data['basic_info'])
- 
+            st.json(data.get('basic_info', "No basic information found."))
+
             st.header("Insights")
-            st.json(data['insights'])
- 
+            st.json(data.get('insights', "No insights found."))
+
             st.header("Recommendations")
-            st.json(data['recommendations'])
+            st.json(data.get('recommendations', "No recommendations found."))
         else:
             st.error(result['message'])
- 
+            if 'error' in result:
+                st.error(f"Details: {result['error']}")
+
 if __name__ == "__main__":
     app()
- 
