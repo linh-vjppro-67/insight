@@ -113,6 +113,8 @@ def process_file(file_path, schema_path):
                 - Identify missing skills compared to the FSoft skill taxonomy and suggest additional skills the candidate should learn.
             13. Optional – Publications Evaluation:
                 - Evaluate any publications mentioned in the CV to assess the prestige and impact of the conferences where papers were published.
+            14. Job resignation prediction:
+                - Analyze job history (role durations, gaps, transitions) to predict the likelihood of resignation. Consider patterns like frequent changes, alignment with skills, and relocation trends to provide retention insights.
  
             Return a JSON object with the following keys:
             - `basic_info`: Basic candidate information.
