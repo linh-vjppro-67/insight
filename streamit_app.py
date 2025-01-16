@@ -66,11 +66,7 @@ def process_file(file_path, schema_path, prompt_text):
     # Prepare data to send to API
     system_message = {
         "role": "system",
-        "content": """You are an AI assistant that helps extract information from resumes (CVs). 
-        Return a JSON object with the following keys:
-        - `basic_info`: Basic candidate information.
-        - `insights`: Analysis results based on the points listed above.
-        - `recommendations`: Suggested career moves, skill improvements, or other insights."""
+        "content": "You are an AI assistant that helps extract information from resumes (CVs)."
     }
 
     user_message = {
@@ -129,78 +125,83 @@ def app():
 
     # Prompt Input Area
     default_prompt = """
-You are an AI assistant that helps extract information from resumes (CVs).
-Keep the language of the CV unchanged.
+        You are an AI assistant that helps extract information from resumes (CVs).
+        Keep the language of the CV unchanged.
 
-Use the following schema to structure the extracted information: {schema}
-Only return valid JSON with the extracted information, without any additional explanations.
-Export object format to store JSON file.
-List all skills.
-Please list all positions held at the same company along with their corresponding time periods, company name, and detailed duties and responsibilities for each role. If the same position is held at different times or in different teams within the same company, include each occurrence separately with its unique time period and team information. Ensure that all distinct roles, teams, and time periods are captured in a **separate array item** for each specific instance.
-Remove special characters to properly format it as an object before saving it to a JSON file.
-Remove ```json, remove $schema.
-Text extracted from PDF: {extracted_text}
+        Use the following schema to structure the extracted information: {schema}
+        Only return valid JSON with the extracted information, without any additional explanations.
+        Export object format to store JSON file.
+        List all skills.
+        Please list all positions held at the same company along with their corresponding time periods, company name, and detailed duties and responsibilities for each role. If the same position is held at different times or in different teams within the same company, include each occurrence separately with its unique time period and team information. Ensure that all distinct roles, teams, and time periods are captured in a **separate array item** for each specific instance.
+        Remove special characters to properly format it as an object before saving it to a JSON file.
+        Remove ```json, remove $schema.
+        Text extracted from PDF: {extracted_text}
 
-After extracting the basic candidate information, perform the following analysis:
-1. Work experience in each company:
-- Define the level of commitment by analyzing the duration and responsibilities within each company.
-2. Work experience in each job title:
-- Define the career trend by analyzing transitions and movement between job titles over time.
-3. Responsibilities and outcomes in each job title:
-- Highlight specific responsibilities and outcomes associated with each job title, and assess how well outcomes align with responsibilities.
-4. Job relocation trends:
-- Compare the extracted work location from the CV with the candidate’s basic location to identify potential job relocation trends (relocation.trends).
-5. Suitability for different job types:
-- Determine whether the candidate is more suited for local, remote, or international work based on their experiences and locations.
-6. Job titles and level of expertise:
-- Identify different job titles and assess the level of expertise in various fields (beginner, intermediate, expert).
-7. Job trends and stability:
-- Analyze job trends by examining the time spent in each job title to assess the likelihood of long-term job stability versus frequent changes.
-8. Career progression:
-- Explore the career progression from entry-level positions to more senior job titles (e.g., Software Developer -> Team Leader -> Manager).
-9. Gaps between jobs:
-- Detect gaps between jobs to understand the reasons behind these gaps (e.g., education, rest, or other factors).
-10. Suggested job titles:
-- Based on the candidate’s skills, years of experience, and educational background, suggest potential job titles they could pursue.
-11. Career growth potential:
-- Predict the career growth potential by analyzing time spent in each job title and career development trends.
-12. Missing skills and improvements:
-- Identify missing skills compared to the FSoft skill taxonomy and suggest additional skills the candidate should learn.
-13. Optional – Publications Evaluation:
-- Evaluate any publications mentioned in the CV to assess the prestige and impact of the conferences where papers were published.
-14. Job resignation prediction:
-- Analyze job history (role durations, gaps, transitions) to predict the likelihood of resignation. Consider patterns like frequent changes, alignment with skills, and relocation trends to provide retention insights.
+        After extracting the basic candidate information, perform the following analysis:
+        1. Work experience in each company:
+        - Define the level of commitment by analyzing the duration and responsibilities within each company.
+        2. Work experience in each job title:
+        - Define the career trend by analyzing transitions and movement between job titles over time.
+        3. Responsibilities and outcomes in each job title:
+        - Highlight specific responsibilities and outcomes associated with each job title, and assess how well outcomes align with responsibilities.
+        4. Job relocation trends:
+        - Compare the extracted work location from the CV with the candidate’s basic location to identify potential job relocation trends (relocation.trends).
+        5. Suitability for different job types:
+        - Determine whether the candidate is more suited for local, remote, or international work based on their experiences and locations.
+        6. Job titles and level of expertise:
+        - Identify different job titles and assess the level of expertise in various fields (beginner, intermediate, expert).
+        7. Job trends and stability:
+        - Analyze job trends by examining the time spent in each job title to assess the likelihood of long-term job stability versus frequent changes.
+        8. Career progression:
+        - Explore the career progression from entry-level positions to more senior job titles (e.g., Software Developer -> Team Leader -> Manager).
+        9. Gaps between jobs:
+        - Detect gaps between jobs to understand the reasons behind these gaps (e.g., education, rest, or other factors).
+        10. Suggested job titles:
+        - Based on the candidate’s skills, years of experience, and educational background, suggest potential job titles they could pursue.
+        11. Career growth potential:
+        - Predict the career growth potential by analyzing time spent in each job title and career development trends.
+        12. Missing skills and improvements:
+        - Identify missing skills compared to the FSoft skill taxonomy and suggest additional skills the candidate should learn.
+        13. Optional – Publications Evaluation:
+        - Evaluate any publications mentioned in the CV to assess the prestige and impact of the conferences where papers were published.
+        14. Job resignation prediction:
+        - Analyze job history (role durations, gaps, transitions) to predict the likelihood of resignation. Consider patterns like frequent changes, alignment with skills, and relocation trends to provide retention insights.
 
-Return a JSON object with the following keys:
-- `basic_info`: Basic candidate information.
-- `insights`: Analysis results based on the points listed above.
-- `recommendations`: Suggested career moves, skill improvements, or other insights.
-    """
+        Return a JSON object with the following keys:
+        - `basic_info`: Basic candidate information.
+        - `insights`: Analysis results based on the points listed above.
+        - `recommendations`: Suggested career moves, skill improvements, or other insights.
+            """
     prompt_text = st.text_area("Prompt Editor", default_prompt, height=600)
 
-    if uploaded_file is not None:
-        file_path = uploaded_file.name
-        with open(file_path, 'wb') as f:
-            f.write(uploaded_file.getvalue())
 
-        # Call process_file
-        result = process_file(file_path, schema_path, prompt_text)
+    # Add a "Generate" button
+    if st.button("Generate"):
+        if uploaded_file is not None:
+            file_path = uploaded_file.name
+            with open(file_path, 'wb') as f:
+                f.write(uploaded_file.getvalue())
 
-        if result['statusCode'] == 200:
-            data = result['data']
+            # Call process_file
+            result = process_file(file_path, schema_path, prompt_text)
 
-            st.header("Basic Candidate Information")
-            st.json(data.get('basic_info', "No basic information found."))
+            if result['statusCode'] == 200:
+                data = result['data']
 
-            st.header("Insights")
-            st.json(data.get('insights', "No insights found."))
+                st.header("Basic Candidate Information")
+                st.json(data.get('basic_info', "No basic information found."))
 
-            st.header("Recommendations")
-            st.json(data.get('recommendations', "No recommendations found."))
+                st.header("Insights")
+                st.json(data.get('insights', "No insights found."))
+
+                st.header("Recommendations")
+                st.json(data.get('recommendations', "No recommendations found."))
+            else:
+                st.error(result['message'])
+                if 'error' in result:
+                    st.error(f"Details: {result['error']}")
         else:
-            st.error(result['message'])
-            if 'error' in result:
-                st.error(f"Details: {result['error']}")
+            st.warning("Please upload a PDF file before generating.")
 
 if __name__ == "__main__":
     app()
