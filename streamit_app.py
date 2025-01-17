@@ -183,55 +183,8 @@ def app():
 
             if result['statusCode'] == 200:
                 data = result['data']
-
-                # Display Basic Candidate Information
-                st.header("Basic Candidate Information")
-                basic_info = data.get('basic_info', {})
-                if basic_info:
-                    for key, value in basic_info.items():
-                        st.subheader(f"{key.capitalize()}:")
-                        st.write(value)
-                else:
-                    st.warning("No basic information found.")
-
-                # Display Insights
-                st.header("Insights")
-                insights = data.get('insights', {})
-                if insights:
-                    # Work Experience Analysis
-                    st.subheader("Work Experience Analysis")
-                    work_experience = insights.get('work_experience', [])
-                    if work_experience:
-                        for i, experience in enumerate(work_experience, start=1):
-                            st.markdown(f"**Experience {i}:**")
-                            for key, value in experience.items():
-                                st.write(f"- **{key.capitalize()}:** {value}")
-                    else:
-                        st.write("No work experience information found.")
-
-                    # Job Trends and Stability
-                    st.subheader("Job Trends and Stability")
-                    job_trends = insights.get('job_trends_and_stability', "No data available.")
-                    st.write(job_trends)
-
-                    # Suggested Job Titles
-                    st.subheader("Suggested Job Titles")
-                    suggested_titles = insights.get('suggested_job_titles', [])
-                    if suggested_titles:
-                        st.write(", ".join(suggested_titles))
-                    else:
-                        st.write("No suggested job titles found.")
-
-                    # Job Resignation Prediction
-                    st.subheader("Job Resignation Prediction")
-                    resignation_prediction = insights.get('job_resignation_prediction', {})
-                    if resignation_prediction:
-                        for key, value in resignation_prediction.items():
-                            st.write(f"- **{key.capitalize()}:** {value}")
-                    else:
-                        st.write("No resignation prediction found.")
-                else:
-                    st.warning("No insights found.")
+                st.header("Result")
+                st.json(data)  # Chỉ trả về toàn bộ kết quả dưới dạng JSON
             else:
                 st.error(result['message'])
                 if 'error' in result:
