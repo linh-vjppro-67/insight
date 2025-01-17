@@ -112,6 +112,9 @@ def process_file(file_path, schema_json, prompt_text):
 def app():
     st.title("Resume Insights and Career Recommendations")
 
+    # Section 1: Upload File and Schema Setup
+    st.header("Section 1: Upload Resume PDF and Enter Prompt")
+
     st.sidebar.header("File Input")
     schema_path = './schema.json'  # Path to schema file
     uploaded_file = st.file_uploader("Choose a PDF resume", type=["pdf"])
@@ -167,10 +170,6 @@ def app():
              * Patterns of frequent transitions, gaps, or promotions in job history.
              * Indicators of dissatisfaction, stagnation, or misalignment with expertise.
            - Predict the exact timeframe (e.g., "3 months," "12 months," or "2 years") in which the candidate is likely to change jobs.
-
-        Return a JSON object with the following keys:
-        - `basic_info`: Basic candidate information.
-        - `insights`: Analysis results based on the points listed above.
     """
 
     # Prompt Input Area
@@ -188,7 +187,7 @@ def app():
 
             if result['statusCode'] == 200:
                 data = result['data']
-                st.header("Result")
+                st.header("Section 2: Generated Insights")
                 st.json(data)  # Chỉ trả về toàn bộ kết quả dưới dạng JSON
             else:
                 st.error(result['message'])
