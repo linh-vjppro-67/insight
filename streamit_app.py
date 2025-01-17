@@ -127,21 +127,10 @@ def app():
 
     # Prompt mặc định
     default_prompt = """
-        Section 1: Extract Information
         You are an AI assistant that helps extract information from resumes (CVs).
-        Keep the language of the CV unchanged.
-        Use the following schema to structure the extracted information: {schema_string}
-        Only return valid JSON with the extracted information, without any additional explanations.
-        Export object format to store json file.
-        List all skills.
-        Please list all positions held at the same company along with their corresponding time periods, company name, and detailed duties and responsibilities for each role. If the same position is held at different times or in different teams within the same company, include each occurrence separately with its unique time period and team information. Ensure that all distinct roles, teams, and time periods are captured in a **separate array item** for each specific instance.
-        Remove special characters to properly format it as an object before saving it to a JSON file.
-        Remove ```json, remove $schema
-        Text extracted from PDF (with coordinates). Keep the language of the CV unchanged:
-        Analyze file content: {extracted_text}
 
-        Section 2: Analyze Career Insights
-        Analyze the candidate's CV data and provide insights based on the following criteria:
+        Analyze the candidate's CV {extracted_text} and provide insights based on the following criteria:
+        0. Name and Contact Information.
         1. Work Experience Analysis:
         For each company listed, extract and summarize the job title, tenure, and level of expertise (categorized as beginner, intermediate, or expert) in relevant fields. Organize this information by company in a structured format.
         2. Job Trends and Stability:
@@ -174,7 +163,7 @@ def app():
                 # Hiển thị kết quả thô từ API
                 st.header("Result Output")
                 st.write("Below is the raw result:")
-                st.text(result['data'])  # Hiển thị kết quả dạng văn bản thô
+                st.markdown(result['data'])  # Hiển thị kết quả dạng văn bản thô
             else:
                 # Hiển thị lỗi
                 st.error(result['message'])
