@@ -139,6 +139,22 @@ def app():
         Remove ```json, remove $schema
         Text extracted from PDF (with coordinates). Keep the language of the CV unchanged:
         Analyze file content: {extracted_text}
+
+        Section 2: Analyze Career Insights
+        Analyze the candidate's CV data and provide insights based on the following criteria:
+        1. Work Experience Analysis:
+        For each company listed, extract and summarize the job title, tenure, and level of expertise (categorized as beginner, intermediate, or expert) in relevant fields. Organize this information by company in a structured format.
+        2. Job Trends and Stability:
+        Analyze the candidate’s career progression by evaluating the time spent in each role. Identify patterns such as frequent job changes, promotions, extended tenures, or gaps between roles. Assess the likelihood of long-term job stability versus a tendency for frequent transitions.
+        3. Suggested Job Titles:
+        Based on the candidate’s skills, years of experience, and educational background, recommend potential job titles or career paths. Ensure suggestions align with their demonstrated expertise, industry trends, and career growth opportunities.
+        4. Job Resignation Prediction:
+        Predict the likelihood of the candidate changing jobs at this time (output as Yes or No) based on factors such as:
+        Duration in the current role relative to past roles.
+        Alignment of current role with skills, career goals, and industry trends.
+        Patterns of frequent transitions, gaps, or promotions in job history.
+        Indicators of dissatisfaction, stagnation, or misalignment with expertise.
+        predict the exact timeframe (e.g., "3 months," "12 months," or "2 years") in which the candidate is likely to change jobs
     """
 
     # Prompt Editor
