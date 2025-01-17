@@ -186,26 +186,15 @@ def app():
             result = process_file(file_path, None, prompt_text)
 
             if result['statusCode'] == 200:
-                data = result['data']
-
-                # Section 2: Display JSON Data
-                st.header("Section 2: Generated JSON Data")
-                
-                # Extract Information
-                st.subheader("Extracted Information (extract_info)")
-                extract_info = data.get('extract_info', {})
-                st.json(extract_info)
-
-                # Insights
-                st.subheader("Candidate Insights (insights)")
-                insights = data.get('insights', {})
-                st.json(insights)
+                # Hiển thị toàn bộ result JSON
+                st.header("Result JSON")
+                st.json(result)
 
             else:
+                # Handle lỗi
                 st.error(result['message'])
                 if 'error' in result:
                     st.error(f"Details: {result['error']}")
-
         else:
             st.warning("Please upload a PDF file before generating.")
 
