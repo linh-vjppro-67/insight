@@ -128,14 +128,15 @@ def app():
         You are an AI assistant that helps extract information from resumes (CVs).
         Keep the language of the CV unchanged.
  
-        Use the following schema to structure the extracted information: {schema}
+        Use the following schema to structure the extracted information: {json.dumps(schema_json)}
         Only return valid JSON with the extracted information, without any additional explanations.
-        Export object format to store JSON file.
+        Export object format to store json file.
         List all skills.
         Please list all positions held at the same company along with their corresponding time periods, company name, and detailed duties and responsibilities for each role. If the same position is held at different times or in different teams within the same company, include each occurrence separately with its unique time period and team information. Ensure that all distinct roles, teams, and time periods are captured in a **separate array item** for each specific instance.
         Remove special characters to properly format it as an object before saving it to a JSON file.
-        Remove ```json, remove $schema.
-        Text extracted from PDF: {extracted_text}
+        Remove ```json, remove $schema
+        Text extracted from PDF (with coordinates). Keep the language of the CV unchanged:
+        Analyze file content: {extracted_text}
  
         Analyze the candidate's CV data and provide insights based on the following criteria:
         1. Work Experience Analysis:
