@@ -183,12 +183,24 @@ def app():
                 f.write(uploaded_file.getvalue())
 
             # Call process_file
-            result = process_file(file_path, schema_json, prompt_text)
+            result = process_file(file_path, None, prompt_text)
 
             if result['statusCode'] == 200:
                 data = result['data']
-                st.header("Section 2: Generated Insights")
-                st.json(data)  # Chỉ trả về toàn bộ kết quả dưới dạng JSON
+
+                # Section 2: Display JSON Data
+                st.header("Section 2: Generated JSON Data")
+                
+                # Extract Information
+                st.subheader("Extracted Information (extract_info)")
+                extract_info = data.get('extract_info', {})
+                st.json(extract_info)
+
+                # Insights
+                st.subheader("Candidate Insights (insights)")
+                insights = data.get('insights', {})
+                st.json(insights)
+
             else:
                 st.error(result['message'])
                 if 'error' in result:
