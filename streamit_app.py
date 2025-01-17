@@ -158,7 +158,6 @@ def app():
             """
     prompt_text = st.text_area("Prompt Editor", default_prompt, height=600)
 
-
     # Add a "Generate" button
     if st.button("Generate"):
         if uploaded_file is not None:
@@ -177,9 +176,6 @@ def app():
 
                 st.header("Insights")
                 st.json(data.get('insights', "No insights found."))
-
-                st.header("Recommendations")
-                st.json(data.get('recommendations', "No recommendations found."))
             else:
                 st.error(result['message'])
                 if 'error' in result:
