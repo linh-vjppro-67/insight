@@ -188,7 +188,7 @@ def app():
             if result['statusCode'] == 200:
                 # Hiển thị toàn bộ result JSON
                 st.header("Result JSON")
-                st.json(result)
+                st.text(result)
 
             else:
                 # Handle lỗi
