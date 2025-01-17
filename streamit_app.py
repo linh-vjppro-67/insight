@@ -130,6 +130,7 @@ def app():
 
     # Default Prompt
     default_prompt = """
+        Section 1: Extract Information
         You are an AI assistant that helps extract information from resumes (CVs).
         Keep the language of the CV unchanged.
         Use the following schema to structure the extracted information: {schema_string}
@@ -142,6 +143,7 @@ def app():
         Text extracted from PDF (with coordinates). Keep the language of the CV unchanged:
         Analyze file content: {extracted_text}
 
+        Section 2: Analyze Candidate Profile
         Analyze the candidate's CV data and provide insights based on the following criteria:
         1. Work Experience Analysis:
            - For each company listed, extract and summarize the job title, tenure, and level of expertise 
