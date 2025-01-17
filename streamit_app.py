@@ -9,11 +9,13 @@ endpoint = st.secrets["AZURE_OPENAI_ENDPOINT"]
 api_key = st.secrets["AZURE_OPENAI_API_KEY"]
 
 # Function to extract text from PDF using pdfplumber
-def extract_text_from_pdf_plumber(pdf_data):
+def extract_text_from_pdf(pdf_data):
     text = ""
     with pdfplumber.open(io.BytesIO(pdf_data)) as pdf:
         for page in pdf.pages:
-            text += page.extract_text()
+            page_text = page.extract_text()
+            if page_text:
+                text += page_text + "\n"
     return text
 
 # Function to process the response from the OpenAI API
@@ -34,23 +36,14 @@ def process_response(response_data):
         return None
 
 # Function to process the uploaded file and call the API
-def process_file(file_path, schema_path, prompt_text):
-    # Read schema from JSON file
-    try:
-        with open(schema_path, 'r') as file:
-            schema_json = json.load(file)
-    except FileNotFoundError:
-        return {'statusCode': 500, 'message': "Schema file not found."}
-    except json.JSONDecodeError as e:
-        return {'statusCode': 500, 'message': f"Error reading schema JSON: {e}"}
-
+def process_file(file_path, schema_json, prompt_text):
     extracted_text = ""
 
     # Handle PDF file
     if file_path.endswith('.pdf'):
         with open(file_path, 'rb') as pdf_file:
             pdf_data = pdf_file.read()
-            extracted_text = extract_text_from_pdf_plumber(pdf_data)
+            extracted_text = extract_text_from_pdf(pdf_data)
     else:
         return {
             'statusCode': 400,
@@ -60,7 +53,7 @@ def process_file(file_path, schema_path, prompt_text):
     if not extracted_text.strip():
         return {
             'statusCode': 400,
-            'message': 'No text extracted from the file.'
+            'message': 'No text extracted from the file. Please check the content of the PDF.'
         }
 
     # Prepare data to send to API
@@ -123,40 +116,59 @@ def app():
     schema_path = './schema.json'  # Path to schema file
     uploaded_file = st.file_uploader("Choose a PDF resume", type=["pdf"])
 
-    # Prompt Input Area
+    # Load the schema JSON
+    try:
+        with open(schema_path, 'r') as file:
+            schema_json = json.load(file)
+            schema_string = json.dumps(schema_json, indent=4)  # Convert schema to a pretty JSON string
+    except FileNotFoundError:
+        st.error("Schema file not found.")
+        return
+    except json.JSONDecodeError as e:
+        st.error(f"Error reading schema JSON: {e}")
+        return
+
+    # Default Prompt
     default_prompt = """
         You are an AI assistant that helps extract information from resumes (CVs).
         Keep the language of the CV unchanged.
- 
-        Use the following schema to structure the extracted information: {json.dumps(schema_json)}
+
+        Use the following schema to structure the extracted information: {schema_string}
         Only return valid JSON with the extracted information, without any additional explanations.
-        Export object format to store json file.
-        List all skills.
-        Please list all positions held at the same company along with their corresponding time periods, company name, and detailed duties and responsibilities for each role. If the same position is held at different times or in different teams within the same company, include each occurrence separately with its unique time period and team information. Ensure that all distinct roles, teams, and time periods are captured in a **separate array item** for each specific instance.
-        Remove special characters to properly format it as an object before saving it to a JSON file.
-        Remove ```json, remove $schema
-        Text extracted from PDF (with coordinates). Keep the language of the CV unchanged:
-        Analyze file content: {extracted_text}
- 
+
+        Text extracted from PDF:
+        {extracted_text}
+
         Analyze the candidate's CV data and provide insights based on the following criteria:
         1. Work Experience Analysis:
-        For each company listed, extract and summarize the job title, tenure, and level of expertise (categorized as beginner, intermediate, or expert) in relevant fields. Organize this information by company in a structured format.
-        2. Job Trends and Stability:
-        Analyze the candidate’s career progression by evaluating the time spent in each role. Identify patterns such as frequent job changes, promotions, extended tenures, or gaps between roles. Assess the likelihood of long-term job stability versus a tendency for frequent transitions.
-        3. Suggested Job Titles:
-        Based on the candidate’s skills, years of experience, and educational background, recommend potential job titles or career paths. Ensure suggestions align with their demonstrated expertise, industry trends, and career growth opportunities.
-        4. Job Resignation Prediction:
-        Predict the likelihood of the candidate changing jobs at this time (output as Yes or No) based on factors such as:
-        Duration in the current role relative to past roles.
-        Alignment of current role with skills, career goals, and industry trends.
-        Patterns of frequent transitions, gaps, or promotions in job history.
-        Indicators of dissatisfaction, stagnation, or misalignment with expertise.
-        predict the exact timeframe (e.g., "3 months," "12 months," or "2 years") in which the candidate is likely to change jobs
+           - For each company listed, extract and summarize the job title, tenure, and level of expertise 
+             (categorized as beginner, intermediate, or expert) in relevant fields. 
+           - Organize this information by company in a structured format.
         
+        2. Job Trends and Stability:
+           - Analyze the candidate’s career progression by evaluating the time spent in each role. 
+           - Identify patterns such as frequent job changes, promotions, extended tenures, or gaps between roles. 
+           - Assess the likelihood of long-term job stability versus a tendency for frequent transitions.
+        
+        3. Suggested Job Titles:
+           - Based on the candidate’s skills, years of experience, and educational background, recommend potential 
+             job titles or career paths. 
+           - Ensure suggestions align with their demonstrated expertise, industry trends, and career growth opportunities.
+        
+        4. Job Resignation Prediction:
+           - Predict the likelihood of the candidate changing jobs at this time (output as Yes or No) based on factors such as:
+             * Duration in the current role relative to past roles.
+             * Alignment of current role with skills, career goals, and industry trends.
+             * Patterns of frequent transitions, gaps, or promotions in job history.
+             * Indicators of dissatisfaction, stagnation, or misalignment with expertise.
+           - Predict the exact timeframe (e.g., "3 months," "12 months," or "2 years") in which the candidate is likely to change jobs.
+
         Return a JSON object with the following keys:
         - `basic_info`: Basic candidate information.
-        - `insights`: Analysis results based on the points listed above.        
-            """
+        - `insights`: Analysis results based on the points listed above.
+    """
+
+    # Prompt Input Area
     prompt_text = st.text_area("Prompt Editor", default_prompt, height=600)
 
     # Add a "Generate" button
@@ -167,7 +179,7 @@ def app():
                 f.write(uploaded_file.getvalue())
 
             # Call process_file
-            result = process_file(file_path, schema_path, prompt_text)
+            result = process_file(file_path, schema_json, prompt_text)
 
             if result['statusCode'] == 200:
                 data = result['data']
