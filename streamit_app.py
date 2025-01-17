@@ -4,11 +4,11 @@ import requests
 import pdfplumber
 import io
 
-# Azure OpenAI API endpoint and key from secrets
+# Azure OpenAI API endpoint and key từ secrets
 endpoint = st.secrets["AZURE_OPENAI_ENDPOINT"]
 api_key = st.secrets["AZURE_OPENAI_API_KEY"]
 
-# Function to extract text from PDF using pdfplumber
+# Hàm đọc văn bản từ PDF
 def extract_text_from_pdf(pdf_data):
     text = ""
     with pdfplumber.open(io.BytesIO(pdf_data)) as pdf:
@@ -18,25 +18,23 @@ def extract_text_from_pdf(pdf_data):
                 text += page_text + "\n"
     return text
 
-# Function to process the response from the OpenAI API
+# Hàm xử lý phản hồi từ API
 def process_response(response_data):
     if not response_data:
         st.warning("No response data. Skipping parsing.")
         return None
 
     try:
-        # Trả về text thô từ response mà không parse JSON
         return response_data['choices'][0]['message']['content']
     except (KeyError, IndexError):
         st.error("Unexpected API response format.")
         return None
 
-
-# Function to process the uploaded file and call the API
-def process_file(file_path, schema_json, prompt_text):
+# Hàm xử lý tệp và gọi API
+def process_file(file_path, schema_string, prompt_text):
     extracted_text = ""
 
-    # Handle PDF file
+    # Đọc PDF
     if file_path.endswith('.pdf'):
         with open(file_path, 'rb') as pdf_file:
             pdf_data = pdf_file.read()
@@ -53,15 +51,16 @@ def process_file(file_path, schema_json, prompt_text):
             'message': 'No text extracted from the file. Please check the content of the PDF.'
         }
 
-    # Prepare data to send to API
+    # Chuẩn bị dữ liệu gửi API
     system_message = {
         "role": "system",
         "content": "You are an AI assistant that helps extract information from resumes (CVs)."
     }
 
+    # Thay thế {schema_string} trong prompt bằng nội dung thực tế
     user_message = {
         "role": "user",
-        "content": prompt_text.replace("{extracted_text}", extracted_text)
+        "content": prompt_text.replace("{schema_string}", schema_string).replace("{extracted_text}", extracted_text)
     }
 
     data = {
@@ -71,7 +70,7 @@ def process_file(file_path, schema_json, prompt_text):
         "top_p": 0.25
     }
 
-    # API request to Azure OpenAI
+    # Gửi yêu cầu API
     try:
         response = requests.post(
             endpoint,
@@ -109,18 +108,16 @@ def process_file(file_path, schema_json, prompt_text):
 def app():
     st.title("Resume Insights and Career Recommendations")
 
-    # Section 1: Upload File and Schema Setup
-    st.header("Section 1: Upload Resume PDF and Enter Prompt")
-
+    # Upload file PDF
     st.sidebar.header("File Input")
-    schema_path = './schema.json'  # Path to schema file
     uploaded_file = st.file_uploader("Choose a PDF resume", type=["pdf"])
 
-    # Load the schema JSON
+    # Đọc schema JSON
+    schema_path = './schema.json'  # Đường dẫn tới schema.json
     try:
         with open(schema_path, 'r') as file:
-            schema_json = json.load(file)
-            schema_string = json.dumps(schema_json, indent=4)  # Convert schema to a pretty JSON string
+            schema_json = json.load(file)  # Đọc JSON từ tệp
+            schema_string = json.dumps(schema_json, indent=4)  # Định dạng JSON thành chuỗi
     except FileNotFoundError:
         st.error("Schema file not found.")
         return
@@ -128,7 +125,7 @@ def app():
         st.error(f"Error reading schema JSON: {e}")
         return
 
-    # Default Prompt
+    # Prompt mặc định
     default_prompt = """
         Section 1: Extract Information
         You are an AI assistant that helps extract information from resumes (CVs).
@@ -142,29 +139,28 @@ def app():
         Remove ```json, remove $schema
         Text extracted from PDF (with coordinates). Keep the language of the CV unchanged:
         Analyze file content: {extracted_text}
-
     """
 
-    # Prompt Input Area
+    # Prompt Editor
     prompt_text = st.text_area("Prompt Editor", default_prompt, height=600)
 
-    # Add a "Generate" button
+    # Nút "Generate"
     if st.button("Generate"):
         if uploaded_file is not None:
             file_path = uploaded_file.name
             with open(file_path, 'wb') as f:
                 f.write(uploaded_file.getvalue())
 
-            # Call process_file
-            result = process_file(file_path, None, prompt_text)
+            # Gọi hàm process_file
+            result = process_file(file_path, schema_string, prompt_text)
 
             if result['statusCode'] == 200:
-                # Hiển thị toàn bộ result JSON
-                st.header("Result JSON")
-                st.write(result)
-
+                # Hiển thị kết quả thô từ API
+                st.header("Result Output")
+                st.write("Below is the raw result:")
+                st.text(result['data'])  # Hiển thị kết quả dạng văn bản thô
             else:
-                # Handle lỗi
+                # Hiển thị lỗi
                 st.error(result['message'])
                 if 'error' in result:
                     st.error(f"Details: {result['error']}")
