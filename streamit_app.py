@@ -25,15 +25,12 @@ def process_response(response_data):
         return None
 
     try:
-        generated_text = response_data['choices'][0]['message']['content']
-        extracted_info = json.loads(generated_text)
-        return extracted_info
+        # Trả về text thô từ response mà không parse JSON
+        return response_data['choices'][0]['message']['content']
     except (KeyError, IndexError):
         st.error("Unexpected API response format.")
         return None
-    except json.JSONDecodeError as e:
-        st.error(f"Error parsing generated text into JSON: {e}")
-        return None
+
 
 # Function to process the uploaded file and call the API
 def process_file(file_path, schema_json, prompt_text):
